@@ -1,10 +1,11 @@
 import logging
+
 import pandas as pd
 from rdkit import RDLogger
 
 log = logging.getLogger(__name__)
 try:
-    import molecular_metrics.edm_analyses.analyze as edm_analyze
+    import molmetrics.edm_analyses.analyze as edm_analyze
 except ImportError:
     raise ValueError("EDM analyses not available.")
 

@@ -3,7 +3,7 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "molecular-metrics"
+name = "molmetrics"
 version = "0.1.0"
 description = "A package to calculate metrics for 3D molecular structures"
 authors = [{name = "Ameya Daigavane", email = "ameya.d.98@gmail.com"}]
@@ -35,5 +35,5 @@ Homepage = "https://github.com/atomicarchitects/Molecular-Metrics"
 dev = ["pytest", "ruff"]
 
 [tool.setuptools]
-packages = ["molecular_metrics"]
+packages = ["molmetrics"]
 

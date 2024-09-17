@@ -198,17 +198,3 @@ def compute_local_environments(
         )
         for central_atom_type, neighbors in local_environments.items()
     }
-
-
-@functools.partial(jax.jit, static_argnames=("lmax",))
-def bispectrum(neighbor_positions: jnp.ndarray, lmax: int) -> float:
-    """Computes the bispectrum of a set of neighboring positions."""
-    assert neighbor_positions.shape == (neighbor_positions.shape[0], 3)
-    x = e3nn.sum(
-        e3nn.s2_dirac(neighbor_positions, lmax=lmax, p_val=1, p_arg=-1), axis=0
-    )
-    rtp = e3nn.reduced_symmetric_tensor_product_basis(
-        x.irreps, 3, keep_ir=["0e", "0o"], _use_optimized_implementation=True
-    )
-    return jnp.einsum("ijkz,i,j,k->z", rtp.array, x.array, x.array, x.array)
-

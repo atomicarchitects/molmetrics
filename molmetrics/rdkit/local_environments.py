@@ -2,7 +2,7 @@ import collections
 from typing import List, Sequence
 
 from rdkit import Chem
-from molecular_metrics.datatypes import LocalEnvironment, Atom, Bond
+from molmetrics.datatypes import LocalEnvironment, Atom, Bond
 
 
 def compute_local_environments(molecules: Sequence[Chem.Mol]) -> List[LocalEnvironment]:

@@ -1,3 +1,5 @@
+"""Defines data types used in the molmetrics package."""
+
 import collections
 from typing import NamedTuple, List
 from enum import Enum

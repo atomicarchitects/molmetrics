@@ -3,8 +3,8 @@ import abc
 
 import numpy as np
 
-from molecular_metrics import bispectrum
-from molecular_metrics.datatypes import Bond, LocalEnvironment
+from molmetrics import bispectrum
+from molmetrics.datatypes import Bond, LocalEnvironment
 
 
 class Molecules(abc.ABC):

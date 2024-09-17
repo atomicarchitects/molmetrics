@@ -1,11 +1,29 @@
-# Molecular Metrics for 3D Molecular Structures
+# molmetrics: Metrics for 3D Molecular Structures
 
-This repository contains a collection of metrics for 3D molecular structures. 
+`molmetrics` is a collection of metrics for 3D molecular structures. 
 
 ## Installation
 
 ```bash
-pip install git+https://github.com/atomicarchitects/MolecularMetrics
+pip install git+https://github.com/atomicarchitects/molmetrics
 ```
 
-See the `examples` folder for usage!
+## Usage
+```python
+import molmetrics as mm
+
+# Load molecules from a directory.
+mols = mm.RDKitMolecules.from_directory('../tests/data/qm9')
+
+# Add bonds to the molecules.
+mols = mols.add_bonds()
+
+# Check the validity and uniqueness of the molecules.
+print("Validity: ", mols.validity())
+print("Uniqueness: ", mols.uniqueness())
+
+# Calculate the bond length distribution.
+bond_lengths = mols.bond_lengths()
+```
+
+See the `examples` folder for more usage!

@@ -12,9 +12,9 @@ try:
 except ImportError:
     log.warning("Posebusters not installed.")
 
-from molecular_metrics.datatypes import Bond, Atom, LocalEnvironment
-from molecular_metrics.molecules import Molecules
-from molecular_metrics.rdkit import io, validity, uniqueness, bond_lengths, bond_angles, local_environments
+from molmetrics.datatypes import Bond, Atom, LocalEnvironment
+from molmetrics.molecules import Molecules
+from molmetrics.rdkit import io, validity, uniqueness, bond_lengths, bond_angles, local_environments
 
 
 class RDKitMolecules(Molecules):

@@ -8,7 +8,7 @@ import numpy as np
 import e3nn_jax as e3nn
 from rdkit import Chem
 
-from molecular_metrics.datatypes import LocalEnvironment
+from molmetrics.datatypes import LocalEnvironment
 
 @functools.partial(jax.jit, static_argnames=("lmax",))
 def bispectrum(positions: jnp.ndarray, lmax: int) -> jnp.ndarray:

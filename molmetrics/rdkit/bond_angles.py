@@ -37,5 +37,5 @@ def compute_bond_angles(molecules: Sequence[Chem.Mol]) -> Dict[Dict[Atom, Tuple[
                     atom1 = Atom(mol.GetAtomWithIdx(atom1_idx).GetSymbol())
                     atom2 = Atom(mol.GetAtomWithIdx(atom2_idx).GetSymbol())
                     bond_angles[atom][atom1, atom2] = angle
-    
-    return jax.tree_map(np.asarray, bond_angles)
+
+    return jax.tree_map(np.asarray, bond_angles, is_leaf=lambda x: isinstance(x, list))

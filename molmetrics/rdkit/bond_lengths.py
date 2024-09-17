@@ -38,4 +38,4 @@ def compute_bond_lengths(molecules: Sequence[Chem.Mol]) -> Dict[Bond, np.ndarray
             )
             bond_dists[bond].append(bond_length)
 
-    return jax.tree_map(np.asarray, bond_dists)
+    return jax.tree_map(np.asarray, bond_dists, is_leaf=lambda x: isinstance(x, list))

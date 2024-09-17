@@ -45,8 +45,6 @@ class RDKitMolecules(Molecules):
 
     def add_bonds(self) -> "RDKitMolecules":
         """Infers and adds bonds to the molecules."""
-        for mol in self:
-            print(mol)
         return RDKitMolecules([validity.add_bonds(mol) for mol in self])
 
     def keep_if_true(self, function: Callable[[Chem.Mol], bool]) -> "RDKitMolecules":

@@ -6,7 +6,7 @@ import jax
 from rdkit import Chem
 import numpy as np
 
-from molmetrics.datatypes import Atom, Bond, BondType
+from molmetrics.datatypes import Atom, Bond
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ def compute_bond_lengths(molecules: Sequence[Chem.Mol]) -> Dict[Bond, np.ndarray
 
         distance_matrix = Chem.Get3DDistanceMatrix(mol)
         for bond in mol.GetBonds():
-            bond_type = bond.GetBondTypeAsDouble()
+            bond_type = bond.GetBondType()
             atom_index_1 = bond.GetBeginAtomIdx()
             atom_index_2 = bond.GetEndAtomIdx()
             atom_type_1 = mol.GetAtomWithIdx(atom_index_1).GetSymbol()
@@ -34,7 +34,7 @@ def compute_bond_lengths(molecules: Sequence[Chem.Mol]) -> Dict[Bond, np.ndarray
             bond = Bond(
                 Atom(atom_type_1),
                 Atom(atom_type_2),
-                BondType(bond_type),
+                bond_type,
             )
             bond_dists[bond].append(bond_length)
 

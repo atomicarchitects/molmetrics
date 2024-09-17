@@ -4,6 +4,7 @@ import collections
 from typing import NamedTuple, List
 from enum import Enum
 
+from rdkit import Chem
 import numpy as np
 
 
@@ -13,20 +14,12 @@ class Atom(NamedTuple):
     symbol: str
 
 
-class BondType(Enum):
-    """Represents a type of chemical bond."""
-
-    SINGLE = 1
-    DOUBLE = 2
-    TRIPLE = 3
-
-
 class Bond(NamedTuple):
     """Represents a chemical bond."""
 
     atom1: Atom
     atom2: Atom
-    bond_type: int
+    bond_type: Chem.BondType
 
 
 class LocalEnvironment(NamedTuple):

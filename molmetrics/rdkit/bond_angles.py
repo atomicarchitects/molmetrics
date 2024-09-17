@@ -7,7 +7,7 @@ from rdkit import Chem
 from rdkit.Chem import rdMolTransforms
 import numpy as np
 
-from molmetrics.datatypes import Atom, Bond, BondType
+from molmetrics.datatypes import Atom, Bond
 
 log = logging.getLogger(__name__)
 

@@ -19,8 +19,8 @@ mols = mm.RDKitMolecules.from_directory('../tests/data/qm9')
 mols = mols.add_bonds()
 
 # Check the validity and uniqueness of the molecules.
-print("Validity: ", mols.validity())
-print("Uniqueness: ", mols.uniqueness())
+print(f"Validity: {mols.validity()}")
+print(f"Uniqueness: {mols.uniqueness()}")
 
 # Calculate the bond length distribution.
 bond_lengths = mols.bond_lengths()

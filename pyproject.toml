@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "molecular-metrics"
+version = "0.1.0"
+description = "A package to calculate metrics for 3D molecular structures"
+authors = [{name = "Ameya Daigavane", email = "ameya.d.98@gmail.com"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "rdkit",
+    "ase",
+    "openbabel-wheel",
+    "jax",
+    "numpy",
+    "scipy",
+    "pandas",
+    "posebusters",
+    "e3nn_jax",
+]
+keywords = ["molecular", "metrics", "3D", "structures"]
+
+[project.urls]
+Homepage = "https://github.com/atomicarchitects/Molecular-Metrics"
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[tool.setuptools]
+packages = ["molecular_metrics"]
+

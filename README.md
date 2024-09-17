@@ -8,4 +8,4 @@ This repository contains a collection of metrics for 3D molecular structures.
 pip install git+https://github.com/atomicarchitects/MolecularMetrics
 ```
 
-See the examples below for usage!
+See the `examples` folder for usage!

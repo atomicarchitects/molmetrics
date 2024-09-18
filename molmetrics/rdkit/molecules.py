@@ -4,7 +4,7 @@ import logging
 import ase
 from rdkit import Chem
 from rdkit.Chem import rdDetermineBonds
-from rdkit import RDLogger
+from rdkit import rdBase
 import numpy as np
 
 log = logging.getLogger(__name__)
@@ -60,14 +60,17 @@ class RDKitMolecules(Molecules):
     def keep_valid(self, verbose: bool = False) -> "RDKitMolecules":
         """Filters out invalid molecules."""
         if not verbose:
-            RDLogger.DisableLog("rdApp.*")  # Disable RDKit logging.
+            # Suppress RDKit warnings.
+            blocker = rdBase.BlockLogs()
 
         valid = RDKitMolecules(
             [mol for mol in self if validity.check_molecule_validity(mol)]
         )
 
         if not verbose:
-            RDLogger.EnableLog("rdApp.*")  # Enable RDKit logging.
+            # Re-enable RDKit warnings.
+            del blocker
+
         return valid
 
     def keep_unique(self) -> "RDKitMolecules":

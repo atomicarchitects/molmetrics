@@ -12,7 +12,9 @@ from molmetrics.datatypes import Atom, Bond
 log = logging.getLogger(__name__)
 
 
-def compute_bond_angles(molecules: Sequence[Chem.Mol]) -> Dict[Dict[Atom, Tuple[Atom, Atom]], np.ndarray]:
+def compute_bond_angles(
+    molecules: Sequence[Chem.Mol],
+) -> Dict[Dict[Atom, Tuple[Atom, Atom]], np.ndarray]:
     """Computes the bond angles around each atom."""
     bond_angles = collections.defaultdict(dict)
     for mol in molecules:
@@ -32,8 +34,10 @@ def compute_bond_angles(molecules: Sequence[Chem.Mol]) -> Dict[Dict[Atom, Tuple[
                         min(atom1_idx, atom2_idx),
                         max(atom1_idx, atom2_idx),
                     )
-                    angle = rdMolTransforms.GetAngleDeg(mol.GetConformer(), atom1_idx, atom_idx, atom2_idx)
-                    
+                    angle = rdMolTransforms.GetAngleDeg(
+                        mol.GetConformer(), atom1_idx, atom_idx, atom2_idx
+                    )
+
                     atom1 = Atom(mol.GetAtomWithIdx(atom1_idx).GetSymbol())
                     atom2 = Atom(mol.GetAtomWithIdx(atom2_idx).GetSymbol())
                     bond_angles[atom][atom1, atom2] = angle

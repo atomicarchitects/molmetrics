@@ -15,6 +15,7 @@ class Atom(NamedTuple):
     def __repr__(self) -> str:
         return f"Atom {self.symbol}"
 
+
 class Bond(NamedTuple):
     """Represents a chemical bond."""
 
@@ -31,6 +32,7 @@ class AtomWithPosition(NamedTuple):
 
     def __repr__(self) -> str:
         return f"Atom {self.symbol} at {self.position}"
+
 
 class LocalEnvironment(NamedTuple):
     """Represents a local chemical environment."""

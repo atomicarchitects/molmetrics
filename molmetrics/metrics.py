@@ -25,7 +25,6 @@ import pandas as pd
 log = logging.getLogger(__name__)
 
 
-
 def get_all_valid_molecules(molecules: Sequence[Chem.Mol]) -> List[Chem.Mol]:
     """Returns all valid molecules (with bonds inferred)."""
     return [mol for mol in molecules if check_molecule_validity(mol)]

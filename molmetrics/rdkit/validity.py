@@ -7,7 +7,9 @@ from rdkit.Chem import rdDetermineBonds
 def add_bonds(mol: Chem.Mol) -> Chem.Mol:
     """Adds bonds to a molecule."""
     mol = Chem.Mol(mol)
-    rdDetermineBonds.DetermineBonds(mol, charge=0, useHueckel=True, allowChargedFragments=False)
+    rdDetermineBonds.DetermineBonds(
+        mol, charge=0, useHueckel=True, allowChargedFragments=False
+    )
     return mol
 
 
@@ -31,7 +33,3 @@ def check_molecule_validity(mol: Chem.Mol) -> bool:
         return False
 
     return True
-
-def get_all_valid_molecules(molecules: Sequence[Chem.Mol]) -> Sequence[Chem.Mol]:
-    """Returns all valid molecules."""
-    return [mol for mol in molecules if check_molecule_validity(mol)]

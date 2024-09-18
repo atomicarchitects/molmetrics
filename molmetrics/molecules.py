@@ -9,6 +9,7 @@ from molmetrics.datatypes import Bond, LocalEnvironment
 # Molecule is a placeholder for the actual molecule type.
 Molecule = Any
 
+
 class Molecules(abc.ABC):
     """Represents a collection of molecules."""
 
@@ -88,7 +89,11 @@ class Molecules(abc.ABC):
 
     def local_environment_bispectra(self, lmax: int = 4) -> bispectrum.BispectraSamples:
         """Computes the bispectra for all local environments."""
-        return bispectrum.BispectraSamples({
-            local_environment: bispectrum.compute_bispectrum_for_local_environment(local_environment, lmax)
-            for local_environment in self.local_environments()
-        })
+        return bispectrum.BispectraSamples(
+            {
+                local_environment: bispectrum.compute_bispectrum_for_local_environment(
+                    local_environment, lmax
+                )
+                for local_environment in self.local_environments()
+            }
+        )

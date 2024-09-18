@@ -58,7 +58,10 @@ class Molecules(abc.ABC):
 
     def uniqueness(self) -> float:
         """Computes the fraction of unique molecules among valid molecules."""
-        return len(self.keep_valid().keep_unique()) / len(self.keep_valid())
+        valid = self.keep_valid()
+        if not valid:
+            return 0.0
+        return len(valid.keep_unique()) / len(valid)
 
     @abc.abstractmethod
     def keep_non_identical(self, other: "Molecules") -> "Molecules":

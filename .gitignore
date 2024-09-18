@@ -4,6 +4,7 @@
 *.pyc
 *__pycache__
 *.log
+*.ruff_cache
 
 # Created by RDKit
 run.out

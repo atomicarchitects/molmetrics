@@ -35,5 +35,5 @@ Homepage = "https://github.com/atomicarchitects/molmetrics"
 dev = ["pytest", "ruff"]
 
 [tool.setuptools]
-packages = ["molmetrics"]
+packages = ["molmetrics", "molmetrics.rdkit"]
 

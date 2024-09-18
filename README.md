@@ -1,6 +1,7 @@
 # molmetrics: Metrics for 3D Molecular Structures
 
-`molmetrics` is a collection of metrics for 3D molecular structures. 
+`molmetrics` is a collection of metrics for 3D molecular structures, built on top of the RDKit, OpenBabel, Posebusters and EDM libraries.
+
 
 ## Installation
 

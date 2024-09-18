@@ -6,6 +6,8 @@ import numpy as np
 from molmetrics import bispectrum
 from molmetrics.datatypes import Bond, LocalEnvironment
 
+# Molecule is a placeholder for the actual molecule type.
+Molecule = Any
 
 class Molecules(abc.ABC):
     """Represents a collection of molecules."""
@@ -18,13 +20,13 @@ class Molecules(abc.ABC):
         """Returns an iterator over the molecules."""
         return iter(self.molecules)
 
-    def __getitem__(self, index: int) -> "Molecule":
+    def __getitem__(self, index: int) -> Molecule:
         """Returns a molecule."""
         return self.molecules[index]
 
     @property
     @abc.abstractmethod
-    def molecules(self) -> List["Molecule"]:
+    def molecules(self) -> List[Molecule]:
         """Returns the molecules."""
         pass
 
@@ -35,7 +37,7 @@ class Molecules(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def keep_if_true(self, function: Callable[["Molecule"], bool]) -> "Molecules":
+    def keep_if_true(self, function: Callable[[Molecule], bool]) -> "Molecules":
         """Filters out molecules that do not satisfy a condition."""
         pass
 

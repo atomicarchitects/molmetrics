@@ -82,7 +82,7 @@ class RDKitMolecules(Molecules):
         """Computes the local environments."""
         return local_environments.compute_local_environments(self)
     
-    def get_posebusters_analysis(
+    def posebusters_analysis(
         self, full_report: bool = False
     ):
         """Returns the analyses results from Posebusters (https://github.com/maabuu/posebusters)."""

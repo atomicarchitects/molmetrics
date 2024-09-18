@@ -86,12 +86,9 @@ class Molecules(abc.ABC):
     def local_environments(self) -> List[LocalEnvironment]:
         """Computes the local environments for all valid molecular geometries."""
 
-    def bispectra(self) -> Dict[LocalEnvironment, np.ndarray]:
-        """
-        Computes the bispectra for all valid molecular geometries.
-        Returns an array of the bispectra.
-        """
-        return {
-            local_environment: bispectrum.compute_bispectrum_for_local_environment(local_environment)
+    def local_environment_bispectra(self, lmax: int = 4) -> bispectrum.BispectraSamples:
+        """Computes the bispectra for all local environments."""
+        return bispectrum.BispectraSamples({
+            local_environment: bispectrum.compute_bispectrum_for_local_environment(local_environment, lmax)
             for local_environment in self.local_environments()
-        }
+        })

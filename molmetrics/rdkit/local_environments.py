@@ -1,34 +1,50 @@
 import collections
-from typing import List, Sequence
+from typing import List, Sequence, Optional
 
+import numpy as np
 from rdkit import Chem
-from molmetrics.datatypes import LocalEnvironment, Atom, Bond
+
+from molmetrics.datatypes import LocalEnvironment, Atom, AtomWithPosition
 
 
 def compute_local_environments(molecules: Sequence[Chem.Mol]) -> List[LocalEnvironment]:
     """Computes the local environments using bonded atoms."""
-    get_position = lambda idx: mol.GetConformer().GetAtomPosition(idx)
-    neighbors = collections.defaultdict(list)
-    neighbor_positions = collections.defaultdict(list)
 
+    def position_fn(mol: Chem.Mol):
+        """Wrapper to get atom positions from atom indices."""
+        def position(idx: int):
+            return mol.GetConformer().GetAtomPosition(idx)
+        return position
+
+    def to_atom_fn(mol: Chem.Mol):
+        """Wrapper to create Atoms from atom indices."""
+        def to_atom(idx: int, pos: Optional[np.ndarray] = None):
+            symbol = mol.GetAtomWithIdx(idx).GetSymbol()
+            if pos is None:
+                return Atom(symbol)
+            return AtomWithPosition(symbol, pos)
+        return to_atom
+
+    all_local_environments = []
     for mol in molecules:
-        neighbor_positions = collections.defaultdict(list)
+        position = position_fn(mol)
+        to_atom = to_atom_fn(mol)
+        neighbors = collections.defaultdict(list)
+        
         for bond in mol.GetBonds():
-            atom_index_1 = bond.GetBeginAtomIdx()
-            atom_index_2 = bond.GetEndAtomIdx()
-            atom1 = Atom(mol.GetAtomWithIdx(atom_index_1).GetSymbol())
-            atom2 = Atom(mol.GetAtomWithIdx(atom_index_2).GetSymbol())
+            atom1_index = bond.GetBeginAtomIdx()
+            atom2_index = bond.GetEndAtomIdx()
+            atom1_position = position(atom1_index)
+            atom2_position = position(atom2_index)
+            
+            neighbors[atom1_index].append(to_atom(atom2_index, atom2_position - atom1_position))
+            neighbors[atom2_index].append(to_atom(atom1_index, atom1_position - atom2_position))
 
-            neighbors[atom1].append(atom2)
-            neighbors[atom2].append(atom1)
-            neighbor_positions[atom1].append(get_position(atom_index_2) - get_position(atom_index_1))
-            neighbor_positions[atom2].append(get_position(atom_index_1) - get_position(atom_index_2))
+        local_environments = [
+            LocalEnvironment(to_atom(central_atom), tuple(sorted(neighbors[central_atom], key=lambda atom: atom.symbol)))
+            for central_atom in neighbors
+        ]
+        all_local_environments.extend(local_environments)
 
-    local_environments = [
-        LocalEnvironment(central_atom, central_atom_neighbors, central_atom_neighbor_positions)
-        for central_atom, central_atom_neighbors, central_atom_neighbor_positions in zip(
-            neighbors.keys(), neighbors.values(), neighbor_positions.values()
-        )
-    ]
-    return local_environments
+    return all_local_environments
 

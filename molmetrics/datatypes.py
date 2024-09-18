@@ -1,8 +1,7 @@
 """Defines data types used in the molmetrics package."""
 
 import collections
-from typing import NamedTuple, List
-from enum import Enum
+from typing import NamedTuple, Tuple, Union
 
 from rdkit import Chem
 import numpy as np
@@ -13,6 +12,8 @@ class Atom(NamedTuple):
 
     symbol: str
 
+    def __repr__(self) -> str:
+        return f"Atom {self.symbol}"
 
 class Bond(NamedTuple):
     """Represents a chemical bond."""
@@ -22,14 +23,22 @@ class Bond(NamedTuple):
     bond_type: Chem.BondType
 
 
+class AtomWithPosition(NamedTuple):
+    """Represents an atom in a molecule with a position."""
+
+    symbol: str
+    position: np.ndarray
+
+    def __repr__(self) -> str:
+        return f"Atom {self.symbol} at {self.position}"
+
 class LocalEnvironment(NamedTuple):
     """Represents a local chemical environment."""
 
     central_atom: Atom
-    neighbors: List[Atom]
-    neighbor_positions: List[np.ndarray]
+    neighbors: Tuple[Union[AtomWithPosition, Atom], ...]
 
     def __repr__(self) -> str:
         sorted_neighbors = sorted(self.neighbors, key=lambda atom: atom.symbol)
         counts = collections.Counter(sorted_neighbors)
-        return f"{self.central_atom.symbol}({','.join([f'{atom.symbol}{count}' for atom, count in counts.items()])})"
+        return f"LocalEnvironment {self.central_atom.symbol}({','.join([f'{atom.symbol}{count}' for atom, count in counts.items()])})"

@@ -1,14 +1,14 @@
 from typing import Dict, Sequence, Tuple
-import collections
 import functools
+import collections
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 import e3nn_jax as e3nn
-from rdkit import Chem
 
-from molmetrics.datatypes import LocalEnvironment
+from molmetrics.datatypes import LocalEnvironment, Atom
+
 
 @functools.partial(jax.jit, static_argnames=("lmax",))
 def bispectrum(positions: jnp.ndarray, lmax: int) -> jnp.ndarray:
@@ -26,5 +26,23 @@ def bispectrum(positions: jnp.ndarray, lmax: int) -> jnp.ndarray:
 
 def compute_bispectrum_for_local_environment(env: LocalEnvironment, lmax: int) -> np.ndarray:
     """Computes the bispectrum of a local environment."""
-    positions = jnp.asarray(env.neighbor_positions)
+    positions = [atom.position for atom in env.neighbors]
+    positions = jnp.asarray(positions)
     return np.asarray(bispectrum(positions, lmax))
+
+
+class BispectraSamples:
+    """Represents a collection of bispectrum samples for local environments."""
+    
+    def __init__(self, samples: Dict[LocalEnvironment, np.ndarray]) -> None:
+        self.samples = samples
+    
+    def aggregate_by_local_environment(self) -> Dict[LocalEnvironment, np.ndarray]:
+        """Aggregates samples by local environment."""
+        samples = collections.defaultdict(list)
+        for env, sample in self.samples.items():
+            # Remove positions from atoms.
+            env_no_positions = LocalEnvironment(env.central_atom, tuple([Atom(atom.symbol) for atom in env.neighbors]))
+            samples[env_no_positions].append(sample)
+        
+        return jax.tree_map(np.stack, samples)

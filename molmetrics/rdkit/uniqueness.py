@@ -11,7 +11,11 @@ def get_all_smiles(molecules: Sequence[Chem.Mol]) -> Sequence[str]:
 def get_all_unique_molecules(molecules: Sequence[Chem.Mol]) -> Sequence[Chem.Mol]:
     """Returns all unique molecules."""
     all_smiles = get_all_smiles(molecules)
-    unique_smiles = list(set(all_smiles))
-    return [
-        mol for mol, smiles in zip(molecules, all_smiles) if smiles in unique_smiles
-    ]
+    seen_smiles = set()
+    unique_molecules = []
+    for mol, smiles in zip(molecules, all_smiles):
+        if smiles in seen_smiles:
+            continue
+        seen_smiles.add(smiles)
+        unique_molecules.append(mol)
+    return unique_molecules

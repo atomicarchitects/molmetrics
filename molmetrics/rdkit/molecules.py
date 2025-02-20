@@ -13,9 +13,9 @@ try:
 except ImportError:
     log.warning("Posebusters not installed.")
 
+from molmetrics import bispectrum
 from molmetrics.datatypes import Bond, Atom, LocalEnvironment
-from molmetrics.molecules import Molecules
-from molmetrics.rdkit import (
+from . import (
     io,
     validity,
     uniqueness,
@@ -25,11 +25,58 @@ from molmetrics.rdkit import (
 )
 
 
-class RDKitMolecules(Molecules):
+class RDKitMolecules:
     """Represents a collection of RDKit molecules."""
 
     def __init__(self, molecules: Sequence[Chem.Mol]):
         self._molecules = list(molecules)
+
+    def __len__(self) -> int:
+        """Returns the number of molecules."""
+        return len(self.molecules)
+
+    def __iter__(self):
+        """Returns an iterator over the molecules."""
+        return iter(self.molecules)
+
+    def __getitem__(self, index: int) -> "RDKitMolecules":
+        """Returns a molecule."""
+        return self.molecules[index]
+
+    @property
+    def molecules(self) -> List["RDKitMolecules"]:
+        """Returns the molecules."""
+        pass
+
+    def validity(self) -> float:
+        """Computes the fraction of valid molecules."""
+        return len(self.keep_valid()) / len(self)
+
+    def uniqueness(self) -> float:
+        """Computes the fraction of unique molecules among valid molecules."""
+        valid = self.keep_valid()
+        if not valid:
+            return 0.0
+        return len(valid.keep_unique()) / len(valid)
+
+    def keep_non_identical(self, other: "RDKitMolecules") -> "RDKitMolecules":
+        """Filters out molecules that are identical to those in another collection."""
+        pass
+
+    def non_identical(self, other: "RDKitMolecules") -> float:
+        """Computes the fraction of identical molecules."""
+        return len(self.keep_non_identical(other)) / len(self)
+
+    def local_environment_bispectra(self, lmax: int = 4) -> bispectrum.BispectraSamples:
+        """Computes the bispectra for all local environments."""
+        return bispectrum.BispectraSamples(
+            {
+                local_environment: bispectrum.compute_bispectrum_for_local_environment(
+                    local_environment, lmax
+                )
+                for local_environment in self.local_environments()
+            }
+        )
 
     @property
     def molecules(self) -> List[Chem.Mol]:

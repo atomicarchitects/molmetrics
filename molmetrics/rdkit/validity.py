@@ -7,9 +7,12 @@ from rdkit.Chem import rdDetermineBonds
 def add_bonds(mol: Chem.Mol) -> Chem.Mol:
     """Adds bonds to a molecule."""
     mol = Chem.Mol(mol)
-    rdDetermineBonds.DetermineBonds(
-        mol, charge=0, useHueckel=True, allowChargedFragments=False
-    )
+    try:
+        rdDetermineBonds.DetermineBonds(
+            mol, charge=0, useHueckel=True, allowChargedFragments=False
+        )
+    except ValueError:
+        raise ValueError("Could not determine bonds in molecule.")
     return mol
 
 

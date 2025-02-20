@@ -2,6 +2,8 @@ from typing import Sequence
 
 from rdkit import Chem
 from rdkit.Chem import rdDetermineBonds
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.*')
 
 
 def add_bonds(mol: Chem.Mol) -> Chem.Mol:

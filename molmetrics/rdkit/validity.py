@@ -3,6 +3,9 @@ from typing import Sequence
 from rdkit import Chem
 from rdkit.Chem import rdDetermineBonds
 from rdkit import RDLogger
+from rdkit.Chem import rdBase
+
+blocker = rdBase.BlockLogs()
 RDLogger.DisableLog('rdApp.*')
 
 

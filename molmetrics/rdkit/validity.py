@@ -11,7 +11,7 @@ RDLogger.DisableLog('rdApp.*')
 
 def add_bonds(mol: Chem.Mol) -> Chem.Mol:
     """Adds bonds to a molecule."""
-    mol = Chem.Mol(mol)
+    mol = Chem.RWMol(mol)
     try:
         rdDetermineBonds.DetermineBonds(
             mol, charge=0, useHueckel=True, allowChargedFragments=False

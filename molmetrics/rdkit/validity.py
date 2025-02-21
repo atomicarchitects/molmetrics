@@ -14,7 +14,7 @@ def add_bonds(mol: Chem.Mol) -> Chem.Mol:
     mol = Chem.RWMol(mol)
     try:
         rdDetermineBonds.DetermineBonds(
-            mol, charge=0, useHueckel=True, allowChargedFragments=False
+            mol, charge=0, useHueckel=False, allowChargedFragments=False
         )
     except ValueError:
         raise ValueError("Could not determine bonds in molecule.")

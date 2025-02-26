@@ -16,7 +16,7 @@ def add_bonds(mol: Chem.Mol) -> Chem.Mol:
         rdDetermineBonds.DetermineBonds(
             mol, charge=0, useHueckel=False, allowChargedFragments=False
         )
-    except ValueError:
+    except (ValueError, IndexError):
         raise ValueError("Could not determine bonds in molecule.")
     return mol
 

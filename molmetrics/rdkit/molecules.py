@@ -29,7 +29,7 @@ class RDKitMolecules:
     """Represents a collection of RDKit molecules."""
 
     def __init__(self, molecules: Sequence[Chem.Mol]):
-        self._molecules = list(molecules)
+        self._molecules = [Chem.Mol(mol) for mol in molecules]
 
     def __len__(self) -> int:
         """Returns the number of molecules."""
@@ -43,11 +43,6 @@ class RDKitMolecules:
         """Returns a molecule."""
         return self.molecules[index]
 
-    @property
-    def molecules(self) -> List["RDKitMolecules"]:
-        """Returns the molecules."""
-        pass
-
     def validity(self) -> float:
         """Computes the fraction of valid molecules."""
         return len(self.keep_valid()) / len(self)
@@ -58,10 +53,6 @@ class RDKitMolecules:
         if not valid:
             return 0.0
         return len(valid.keep_unique()) / len(valid)
-
-    def keep_non_identical(self, other: "RDKitMolecules") -> "RDKitMolecules":
-        """Filters out molecules that are identical to those in another collection."""
-        pass
 
     def non_identical(self, other: "RDKitMolecules") -> float:
         """Computes the fraction of identical molecules."""
@@ -149,7 +140,7 @@ class RDKitMolecules:
         """Computes the local environments."""
         return local_environments.compute_local_environments(self)
 
-    def posebusters_analysis(self, full_report: bool = False):
+    def analyse_with_posebusters(self, full_report: bool = False):
         """Returns the analyses results from Posebusters (https://github.com/maabuu/posebusters)."""
         return posebusters.PoseBusters(config="mol").bust(
             mol_pred=self, full_report=full_report

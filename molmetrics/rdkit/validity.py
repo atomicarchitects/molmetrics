@@ -12,12 +12,9 @@ RDLogger.DisableLog('rdApp.*')
 def add_bonds(mol: Chem.Mol) -> Chem.Mol:
     """Adds bonds to a molecule."""
     mol = Chem.RWMol(mol)
-    try:
-        rdDetermineBonds.DetermineBonds(
-            mol, charge=0, useHueckel=False, allowChargedFragments=False
-        )
-    except (ValueError, IndexError):
-        raise ValueError("Could not determine bonds in molecule.")
+    rdDetermineBonds.DetermineBonds(
+        mol, charge=0, useHueckel=False, allowChargedFragments=False
+    )
     return mol
 
 
@@ -34,7 +31,7 @@ def check_molecule_validity(mol: Chem.Mol) -> bool:
 
     try:
         mol = add_bonds(mol)
-    except ValueError:
+    except (ValueError, IndexError):
         return False
 
     if mol.GetNumBonds() == 0:

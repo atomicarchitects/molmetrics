@@ -11,6 +11,7 @@ log = logging.getLogger(__name__)
 try:
     import posebusters
 except ImportError:
+    posebusters = None
     log.warning("Posebusters not installed.")
 
 from molmetrics import bispectrum
@@ -18,7 +19,6 @@ from molmetrics.datatypes import Bond, Atom, LocalEnvironment
 from . import (
     io,
     validity,
-    uniqueness,
     bond_lengths,
     bond_angles,
     local_environments,
@@ -49,10 +49,14 @@ class RDKitMolecules:
 
     def uniqueness(self) -> float:
         """Computes the fraction of unique molecules among valid molecules."""
-        valid = self.keep_valid()
-        if not valid:
+        valid_mols = self.keep_valid()
+        if not valid_mols:
             return 0.0
-        return len(valid.keep_unique()) / len(valid)
+
+        smiles = [Chem.MolToSmiles(mol) for mol in valid_mols]
+        uniqueness = len(set(smiles)) / len(smiles)
+        return uniqueness
+
 
     def non_identical(self, other: "RDKitMolecules") -> float:
         """Computes the fraction of identical molecules."""
@@ -111,23 +115,6 @@ class RDKitMolecules:
 
         return valid
 
-    def keep_unique(self) -> "RDKitMolecules":
-        """Filters out duplicate molecules."""
-        return RDKitMolecules(uniqueness.get_all_unique_molecules(self))
-
-    def keep_non_identical(self, other: "RDKitMolecules") -> "RDKitMolecules":
-        """Filters out molecules that are identical to those in another collection."""
-        unique_smiles = uniqueness.get_all_smiles(self)
-        other_smiles = set(uniqueness.get_all_smiles(other))
-        assert len(unique_smiles) == len(self)
-        return RDKitMolecules(
-            [
-                mol
-                for mol, smiles in zip(self, unique_smiles)
-                if smiles not in other_smiles
-            ]
-        )
-
     def bond_lengths(self) -> Dict[Bond, np.ndarray]:
         """Computes the bond lengths."""
         return bond_lengths.compute_bond_lengths(self)
@@ -142,6 +129,10 @@ class RDKitMolecules:
 
     def analyse_with_posebusters(self, full_report: bool = False):
         """Returns the analyses results from Posebusters (https://github.com/maabuu/posebusters)."""
+        if posebusters is None:
+            raise ImportError(
+                "Posebusters is not installed. Please install it to use this feature."
+            )
         return posebusters.PoseBusters(config="mol").bust(
             mol_pred=self, full_report=full_report
         )

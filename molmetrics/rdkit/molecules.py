@@ -57,7 +57,6 @@ class RDKitMolecules:
         uniqueness = len(set(smiles)) / len(smiles)
         return uniqueness
 
-
     def non_identical(self, other: "RDKitMolecules") -> float:
         """Computes the fraction of identical molecules."""
         return len(self.keep_non_identical(other)) / len(self)

@@ -19,6 +19,7 @@ from molmetrics.datatypes import Bond, Atom, LocalEnvironment
 from . import (
     io,
     validity,
+    uniqueness,
     bond_lengths,
     bond_angles,
     local_environments,
@@ -50,12 +51,12 @@ class RDKitMolecules:
     def uniqueness(self) -> float:
         """Computes the fraction of unique molecules among valid molecules."""
         valid_mols = self.keep_valid()
+        valid_mols = valid_mols.add_bonds()
         if not valid_mols:
             return 0.0
 
-        smiles = [Chem.MolToSmiles(mol) for mol in valid_mols]
-        uniqueness = len(set(smiles)) / len(smiles)
-        return uniqueness
+        unique_mols = uniqueness.get_all_unique_molecules(valid_mols)
+        return len(unique_mols) / len(valid_mols)
 
     def non_identical(self, other: "RDKitMolecules") -> float:
         """Computes the fraction of identical molecules."""

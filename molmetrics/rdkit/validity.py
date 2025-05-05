@@ -13,7 +13,7 @@ def add_bonds(mol: Chem.Mol) -> Chem.Mol:
     """Adds bonds to a molecule."""
     mol = Chem.RWMol(mol)
     rdDetermineBonds.DetermineBonds(
-        mol, charge=0, useHueckel=False, allowChargedFragments=False
+        mol, charge=0, useHueckel=False, allowChargedFragments=True
     )
     return mol
 

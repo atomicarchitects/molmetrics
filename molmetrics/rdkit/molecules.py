@@ -5,6 +5,7 @@ import ase
 from rdkit import Chem
 from rdkit.Chem import rdDetermineBonds
 from rdkit import rdBase
+from rdkit.Contrib.SA_Score import sascorer
 import numpy as np
 
 log = logging.getLogger(__name__)
@@ -57,6 +58,12 @@ class RDKitMolecules:
 
         unique_mols = uniqueness.get_all_unique_molecules(valid_mols)
         return len(unique_mols) / len(valid_mols)
+    
+    def synthesizability(self) -> List[float]:
+        """Computes the synthesizability of valid molecules."""
+        valid_mols = self.keep_valid()
+        valid_mols = valid_mols.add_bonds()
+        return [sascorer.calculateScore(mol) for mol in valid_mols]
 
     def non_identical(self, other: "RDKitMolecules") -> float:
         """Computes the fraction of identical molecules."""

@@ -59,6 +59,12 @@ class RDKitMolecules:
         unique_mols = uniqueness.get_all_unique_molecules(valid_mols)
         return len(unique_mols) / len(valid_mols)
     
+    def compute_metric(self, metric_fn: Callable[[Chem.Mol], any]) -> List[any]:
+        """Computes the given metric across valid molecules."""
+        valid_mols = self.keep_valid()
+        valid_mols = valid_mols.add_bonds()
+        return [metric_fn(mol) for mol in valid_mols]
+    
     def synthesizability(self) -> List[float]:
         """Computes the synthesizability of valid molecules."""
         valid_mols = self.keep_valid()

@@ -134,12 +134,12 @@ class RDKitMolecules:
         """Computes the local environments."""
         return local_environments.compute_local_environments(self)
 
-    def analyse_with_posebusters(self, full_report: bool = False):
+    def analyse_with_posebusters(self, full_report: bool = False, config: str = "mol"):
         """Returns the analyses results from Posebusters (https://github.com/maabuu/posebusters)."""
         if posebusters is None:
             raise ImportError(
                 "Posebusters is not installed. Please install it to use this feature."
             )
-        return posebusters.PoseBusters(config="mol").bust(
+        return posebusters.PoseBusters(config).bust(
             mol_pred=self, full_report=full_report
         )

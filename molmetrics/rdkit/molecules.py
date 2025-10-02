@@ -57,6 +57,12 @@ class RDKitMolecules:
 
         unique_mols = uniqueness.get_all_unique_molecules(valid_mols)
         return len(unique_mols) / len(valid_mols)
+    
+    def compute_metric(self, metric_fn: Callable[[Chem.Mol], any]) -> List[any]:
+        """Computes the given metric across valid molecules."""
+        valid_mols = self.keep_valid()
+        valid_mols = valid_mols.add_bonds()
+        return [metric_fn(mol) for mol in valid_mols]
 
     def non_identical(self, other: "RDKitMolecules") -> float:
         """Computes the fraction of identical molecules."""
@@ -127,12 +133,12 @@ class RDKitMolecules:
         """Computes the local environments."""
         return local_environments.compute_local_environments(self)
 
-    def analyse_with_posebusters(self, full_report: bool = False):
+    def analyse_with_posebusters(self, full_report: bool = False, config: str = "mol"):
         """Returns the analyses results from Posebusters (https://github.com/maabuu/posebusters)."""
         if posebusters is None:
             raise ImportError(
                 "Posebusters is not installed. Please install it to use this feature."
             )
-        return posebusters.PoseBusters(config="mol").bust(
+        return posebusters.PoseBusters(config).bust(
             mol_pred=self, full_report=full_report
         )

@@ -1,20 +1,13 @@
 from typing import Sequence, Callable, Dict, Tuple, List
 import logging
 
-import ase
 from rdkit import Chem
 from rdkit.Chem import rdDetermineBonds
 from rdkit import rdBase
 import numpy as np
 
 log = logging.getLogger(__name__)
-try:
-    import posebusters
-except ImportError:
-    posebusters = None
-    log.warning("Posebusters not installed.")
 
-from molmetrics import bispectrum
 from molmetrics.datatypes import Bond, Atom, LocalEnvironment
 from . import (
     io,
@@ -23,6 +16,7 @@ from . import (
     bond_lengths,
     bond_angles,
     local_environments,
+    stability,
 )
 
 
@@ -34,15 +28,19 @@ class RDKitMolecules:
 
     def __len__(self) -> int:
         """Returns the number of molecules."""
-        return len(self.molecules)
+        return len(self._molecules)
 
     def __iter__(self):
         """Returns an iterator over the molecules."""
-        return iter(self.molecules)
+        return iter(self._molecules)
 
-    def __getitem__(self, index: int) -> "RDKitMolecules":
+    def __getitem__(self, index: int) -> Chem.Mol:
         """Returns a molecule."""
-        return self.molecules[index]
+        return self._molecules[index]
+
+    @property
+    def molecules(self) -> List[Chem.Mol]:
+        return self._molecules
 
     def validity(self) -> float:
         """Computes the fraction of valid molecules."""
@@ -54,10 +52,39 @@ class RDKitMolecules:
         valid_mols = valid_mols.add_bonds()
         if not valid_mols:
             return 0.0
-
         unique_mols = uniqueness.get_all_unique_molecules(valid_mols)
         return len(unique_mols) / len(valid_mols)
-    
+
+    def atom_stability(self) -> float:
+        """Computes the fraction of atoms with correct valency (EDM metric).
+
+        Uses bond distance lookup tables to infer bonds, then checks if each
+        atom has the allowed number of bonds for its element type.
+        """
+        total_atoms = 0
+        stable_atoms = 0
+        for mol in self:
+            if mol.GetNumConformers() == 0:
+                continue
+            atom_stab, _ = stability.compute_stability_for_molecule(mol)
+            n = mol.GetNumAtoms()
+            stable_atoms += int(round(atom_stab * n))
+            total_atoms += n
+        return stable_atoms / total_atoms if total_atoms > 0 else 0.0
+
+    def molecule_stability(self) -> float:
+        """Computes the fraction of molecules where all atoms are stable (EDM metric)."""
+        total = 0
+        stable = 0
+        for mol in self:
+            if mol.GetNumConformers() == 0:
+                continue
+            _, mol_stab = stability.compute_stability_for_molecule(mol)
+            total += 1
+            if mol_stab:
+                stable += 1
+        return stable / total if total > 0 else 0.0
+
     def compute_metric(self, metric_fn: Callable[[Chem.Mol], any]) -> List[any]:
         """Computes the given metric across valid molecules."""
         valid_mols = self.keep_valid()
@@ -67,59 +94,6 @@ class RDKitMolecules:
     def non_identical(self, other: "RDKitMolecules") -> float:
         """Computes the fraction of identical molecules."""
         return len(self.keep_non_identical(other)) / len(self)
-
-    def local_environment_bispectra(self, lmax: int = 4) -> bispectrum.BispectraSamples:
-        """Computes the bispectra for all local environments."""
-        return bispectrum.BispectraSamples(
-            {
-                local_environment: bispectrum.compute_bispectrum_for_local_environment(
-                    local_environment, lmax
-                )
-                for local_environment in self.local_environments()
-            }
-        )
-
-    @property
-    def molecules(self) -> List[Chem.Mol]:
-        return self._molecules
-
-    @classmethod
-    def from_directory(
-        self, directory: str, extension: str = ".xyz"
-    ) -> "RDKitMolecules":
-        """Loads molecules from a directory."""
-        molecules = io.get_all_molecules(directory, extension)
-        return RDKitMolecules(molecules)
-
-    @classmethod
-    def from_ase_atoms(self, atoms: Sequence[ase.Atoms]) -> "RDKitMolecules":
-        """Loads molecules from ASE atoms."""
-        molecules = io.ase_to_rdkit_molecules(atoms)
-        return RDKitMolecules(molecules)
-
-    def add_bonds(self) -> "RDKitMolecules":
-        """Infers and adds bonds to the molecules."""
-        return RDKitMolecules([validity.add_bonds(mol) for mol in self])
-
-    def keep_if_true(self, function: Callable[[Chem.Mol], bool]) -> "RDKitMolecules":
-        """Filters out molecules that do not satisfy a condition."""
-        return RDKitMolecules([mol for mol in self if function(mol)])
-
-    def keep_valid(self, verbose: bool = False) -> "RDKitMolecules":
-        """Filters out invalid molecules."""
-        if not verbose:
-            # Suppress RDKit warnings.
-            blocker = rdBase.BlockLogs()
-
-        valid = RDKitMolecules(
-            [mol for mol in self if validity.check_molecule_validity(mol)]
-        )
-
-        if not verbose:
-            # Re-enable RDKit warnings.
-            del blocker
-
-        return valid
 
     def bond_lengths(self) -> Dict[Bond, np.ndarray]:
         """Computes the bond lengths."""
@@ -133,11 +107,69 @@ class RDKitMolecules:
         """Computes the local environments."""
         return local_environments.compute_local_environments(self)
 
+    def local_environment_bispectra(self, lmax: int = 4):
+        """Computes the bispectra for all local environments.
+
+        Requires jax and e3nn-jax to be installed.
+        """
+        from molmetrics import bispectrum
+
+        return bispectrum.BispectraSamples(
+            {
+                local_environment: bispectrum.compute_bispectrum_for_local_environment(
+                    local_environment, lmax
+                )
+                for local_environment in self.local_environments()
+            }
+        )
+
+    def add_bonds(self) -> "RDKitMolecules":
+        """Infers and adds bonds to the molecules."""
+        return RDKitMolecules([validity.add_bonds(mol) for mol in self])
+
+    def keep_if_true(self, function: Callable[[Chem.Mol], bool]) -> "RDKitMolecules":
+        """Filters out molecules that do not satisfy a condition."""
+        return RDKitMolecules([mol for mol in self if function(mol)])
+
+    def keep_valid(self, verbose: bool = False) -> "RDKitMolecules":
+        """Filters out invalid molecules."""
+        if not verbose:
+            blocker = rdBase.BlockLogs()
+
+        valid = RDKitMolecules(
+            [mol for mol in self if validity.check_molecule_validity(mol)]
+        )
+
+        if not verbose:
+            del blocker
+
+        return valid
+
+    @classmethod
+    def from_directory(cls, directory: str, extension: str = ".xyz") -> "RDKitMolecules":
+        """Loads molecules from a directory."""
+        molecules = io.get_all_molecules(directory, extension)
+        return cls(molecules)
+
+    @classmethod
+    def from_ase_atoms(cls, atoms) -> "RDKitMolecules":
+        """Loads molecules from ASE Atoms objects.
+
+        Requires ase to be installed.
+        """
+        molecules = io.ase_to_rdkit_molecules(atoms)
+        return cls(molecules)
+
     def analyse_with_posebusters(self, full_report: bool = False, config: str = "mol"):
-        """Returns the analyses results from Posebusters (https://github.com/maabuu/posebusters)."""
-        if posebusters is None:
+        """Returns the analysis results from PoseBusters.
+
+        Requires posebusters to be installed.
+        """
+        try:
+            import posebusters
+        except ImportError:
             raise ImportError(
-                "Posebusters is not installed. Please install it to use this feature."
+                "posebusters is not installed. Install it with: pip install posebusters"
             )
         return posebusters.PoseBusters(config).bust(
             mol_pred=self, full_report=full_report

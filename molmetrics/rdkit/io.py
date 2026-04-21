@@ -2,7 +2,6 @@ import io
 import os
 from typing import List, Sequence
 
-import ase
 from rdkit import Chem
 
 
@@ -34,8 +33,13 @@ def get_all_molecules(molecules_dir: str, extension: str) -> List[Chem.Mol]:
     return molecules
 
 
-def ase_to_rdkit_molecule(ase_mol: ase.Atoms) -> Chem.Mol:
-    """Converts a molecule from ase format to an RDKit molecule."""
+def ase_to_rdkit_molecule(ase_mol) -> Chem.Mol:
+    """Converts a molecule from ase format to an RDKit molecule.
+
+    Requires ase to be installed.
+    """
+    import ase.io
+
     with io.StringIO() as f:
         ase.io.write(f, ase_mol, format="xyz")
         f.seek(0)
@@ -44,6 +48,6 @@ def ase_to_rdkit_molecule(ase_mol: ase.Atoms) -> Chem.Mol:
     return Chem.Mol(mol)
 
 
-def ase_to_rdkit_molecules(ase_mols: Sequence[ase.Atoms]) -> List[Chem.Mol]:
+def ase_to_rdkit_molecules(ase_mols: Sequence) -> List[Chem.Mol]:
     """Converts molecules from ase format to RDKit molecules."""
     return [ase_to_rdkit_molecule(mol) for mol in ase_mols]

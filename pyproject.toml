@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "molmetrics"
-version = "0.1.0"
+version = "0.2.0"
 description = "A package to calculate metrics for 3D molecular structures"
 authors = [{name = "Ameya Daigavane", email = "ameya.d.98@gmail.com"}]
 license = {text = "MIT"}
@@ -25,6 +25,7 @@ dependencies = [
     "pandas",
     "posebusters",
     "e3nn_jax",
+    "pymatgen",
 ]
 keywords = ["molecular", "metrics", "3D", "structures"]
 

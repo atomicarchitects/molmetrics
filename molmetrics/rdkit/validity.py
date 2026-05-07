@@ -55,6 +55,25 @@ def get_smiles_if_valid(mol: Chem.Mol, removeHs: bool = False) -> str:
     Same pipeline as check_molecule_validity_with_smiles but returns the SMILES string
     for use in uniqueness computation.
     """
+    result = _smiles_validity_pipeline(mol, removeHs)
+    return result[0] if result is not None else None
+
+
+def get_mol_with_bonds_if_valid(mol: Chem.Mol, removeHs: bool = False):
+    """Returns (smiles, rdkit_mol_with_bonds) if valid, else None.
+
+    The returned mol has bonds inferred by pymatgen/OpenBabel via PDB round-trip.
+    """
+    return _smiles_validity_pipeline(mol, removeHs)
+
+
+def _smiles_validity_pipeline(mol: Chem.Mol, removeHs: bool = False):
+    """Core pipeline: mol → pymatgen → PDB → RDKit → SMILES.
+
+    Returns (smiles, rdkit_mol_full, rdkit_mol_largest_frag) if valid, else None.
+    smiles is from the largest fragment (for uniqueness).
+    rdkit_mol_full is the full molecule with all fragments (for PoseBusters).
+    """
     try:
         from pymatgen.core import Molecule as PymatgenMolecule
     except ImportError:
@@ -81,16 +100,17 @@ def get_smiles_if_valid(mol: Chem.Mol, removeHs: bool = False) -> str:
         if rdkit_mol is None:
             return None
 
-        # Take largest fragment
-        frags = Chem.rdmolops.GetMolFrags(rdkit_mol, asMols=True)
-        if frags:
-            rdkit_mol = max(frags, key=lambda m: m.GetNumAtoms())
-
+        # Check initial SMILES
         smiles = Chem.MolToSmiles(rdkit_mol, isomericSmiles=True)
         if smiles is None or smiles == "":
             return None
 
-        return smiles
+        # Take largest fragment for SMILES (matching ADiT/Zatom-1)
+        frags = Chem.rdmolops.GetMolFrags(rdkit_mol, asMols=True)
+        largest_frag = max(frags, default=rdkit_mol, key=lambda m: m.GetNumAtoms())
+        frag_smiles = Chem.MolToSmiles(largest_frag, isomericSmiles=True)
+
+        return (frag_smiles, rdkit_mol)
     except Exception:
         return None
     finally:

@@ -183,14 +183,17 @@ class RDKitMolecules:
         return valid
 
     def keep_valid_with_smiles(self, removeHs: bool = False) -> "RDKitMolecules":
-        """Filters out invalid molecules using the SMILES-based protocol."""
-        return RDKitMolecules(
-            [
-                mol
-                for mol in self
-                if validity.check_molecule_validity_with_smiles(mol, removeHs=removeHs)
-            ]
-        )
+        """Filters out invalid molecules using the SMILES-based protocol.
+
+        Returns molecules with bonds inferred by pymatgen/OpenBabel (via PDB round-trip),
+        not the original bondless molecules.
+        """
+        valid = []
+        for mol in self:
+            result = validity.get_mol_with_bonds_if_valid(mol, removeHs=removeHs)
+            if result is not None:
+                valid.append(result[1])
+        return RDKitMolecules(valid)
 
     @classmethod
     def from_directory(

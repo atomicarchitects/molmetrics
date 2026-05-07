@@ -16,7 +16,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "rdkit==2023.03.2",
+    "rdkit==2025.3.5",
     "ase",
     "openbabel-wheel",
     "jax",

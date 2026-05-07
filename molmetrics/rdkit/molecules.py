@@ -43,12 +43,42 @@ class RDKitMolecules:
         return self._molecules
 
     def validity(self) -> float:
-        """Computes the fraction of valid molecules."""
+        """Computes the fraction of valid molecules using xyz2mol (rdDetermineBonds).
+
+        This is the stricter validity check — requires successful bond inference
+        from 3D coordinates with net charge 0.
+        """
         return len(self.keep_valid()) / len(self)
+
+    def validity_with_smiles(self, removeHs: bool = False) -> float:
+        """Computes the fraction of valid molecules using the SMILES-based protocol.
+
+        Matches the evaluation used by ADiT (Joshi et al., 2025) and Zatom-1 (Luo et al., 2025):
+        writes to PDB via pymatgen, reads back with RDKit, checks if canonical SMILES
+        can be generated. Generally more lenient than xyz2mol validity.
+        """
+        n_valid = sum(
+            1 for mol in self
+            if validity.check_molecule_validity_with_smiles(mol, removeHs=removeHs)
+        )
+        return n_valid / len(self)
 
     def uniqueness(self) -> float:
         """Computes the fraction of unique molecules among valid molecules."""
         valid_mols = self.keep_valid()
+        valid_mols = valid_mols.add_bonds()
+        if not valid_mols:
+            return 0.0
+        unique_mols = uniqueness.get_all_unique_molecules(valid_mols)
+        return len(unique_mols) / len(valid_mols)
+
+    def uniqueness_with_smiles(self, removeHs: bool = False) -> float:
+        """Computes the fraction of unique molecules among SMILES-valid molecules.
+
+        Uses the SMILES-based validity protocol (ADiT/Zatom-1) to determine valid
+        molecules, then computes uniqueness among those.
+        """
+        valid_mols = self.keep_valid_with_smiles(removeHs=removeHs)
         valid_mols = valid_mols.add_bonds()
         if not valid_mols:
             return 0.0
@@ -144,6 +174,12 @@ class RDKitMolecules:
             del blocker
 
         return valid
+
+    def keep_valid_with_smiles(self, removeHs: bool = False) -> "RDKitMolecules":
+        """Filters out invalid molecules using the SMILES-based protocol."""
+        return RDKitMolecules(
+            [mol for mol in self if validity.check_molecule_validity_with_smiles(mol, removeHs=removeHs)]
+        )
 
     @classmethod
     def from_directory(cls, directory: str, extension: str = ".xyz") -> "RDKitMolecules":

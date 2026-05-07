@@ -8,7 +8,14 @@ from rdkit import RDLogger
 from rdkit.Chem import rdBase
 
 blocker = rdBase.BlockLogs()
-RDLogger.DisableLog('rdApp.*')
+RDLogger.DisableLog("rdApp.*")
+
+try:
+    from openbabel import openbabel
+
+    openbabel.obErrorLog.StopLogging()
+except ImportError:
+    pass
 
 
 def add_bonds(mol: Chem.Mol) -> Chem.Mol:
@@ -42,19 +49,11 @@ def check_molecule_validity(mol: Chem.Mol) -> bool:
     return True
 
 
-def check_molecule_validity_with_smiles(mol: Chem.Mol, removeHs: bool = False) -> bool:
-    """Checks whether a molecule is valid using the SMILES-based protocol from ADiT/Zatom-1.
+def get_smiles_if_valid(mol: Chem.Mol, removeHs: bool = False) -> str:
+    """Returns canonical SMILES if the molecule is valid via the SMILES protocol, else None.
 
-    Writes molecule to PDB via pymatgen (which infers bonds from geometry),
-    reads it back with RDKit, and checks if a canonical SMILES can be generated.
-    This matches the evaluation protocol used by Joshi et al. (2025) and Luo et al. (2025).
-
-    Args:
-        mol: RDKit molecule with a 3D conformer and atom types (no bonds required).
-        removeHs: Whether to remove hydrogens when reading the PDB file.
-
-    Returns:
-        True if a valid SMILES string can be generated.
+    Same pipeline as check_molecule_validity_with_smiles but returns the SMILES string
+    for use in uniqueness computation.
     """
     try:
         from pymatgen.core import Molecule as PymatgenMolecule
@@ -68,11 +67,9 @@ def check_molecule_validity_with_smiles(mol: Chem.Mol, removeHs: bool = False) -
     conf = mol.GetConformer()
     n = mol.GetNumAtoms()
 
-    # Extract atom types and positions.
     species = [mol.GetAtomWithIdx(i).GetAtomicNum() for i in range(n)]
     coords = [list(conf.GetAtomPosition(i)) for i in range(n)]
 
-    # Convert to pymatgen Molecule and write to PDB.
     pmg_mol = PymatgenMolecule(species=species, coords=coords)
 
     with tempfile.NamedTemporaryFile(suffix=".pdb", delete=False) as f:
@@ -80,18 +77,38 @@ def check_molecule_validity_with_smiles(mol: Chem.Mol, removeHs: bool = False) -
     try:
         pmg_mol.to(pdb_path, fmt="pdb")
 
-        # Read back with RDKit (which parses the PDB bond information).
         rdkit_mol = Chem.MolFromPDBFile(pdb_path, removeHs=removeHs)
         if rdkit_mol is None:
-            return False
+            return None
 
-        # Check if SMILES can be generated.
+        # Take largest fragment
+        frags = Chem.rdmolops.GetMolFrags(rdkit_mol, asMols=True)
+        if frags:
+            rdkit_mol = max(frags, key=lambda m: m.GetNumAtoms())
+
         smiles = Chem.MolToSmiles(rdkit_mol, isomericSmiles=True)
         if smiles is None or smiles == "":
-            return False
+            return None
 
-        return True
+        return smiles
     except Exception:
-        return False
+        return None
     finally:
         os.unlink(pdb_path)
+
+
+def check_molecule_validity_with_smiles(mol: Chem.Mol, removeHs: bool = False) -> bool:
+    """Checks whether a molecule is valid using the SMILES-based protocol from ADiT/Zatom-1.
+
+    Writes molecule to PDB via pymatgen (which infers bonds from geometry),
+    reads it back with RDKit, and checks if a canonical SMILES can be generated.
+    This matches the evaluation protocol used by Joshi et al. (2025) and Morehead et al. (2026).
+
+    Args:
+        mol: RDKit molecule with a 3D conformer and atom types (no bonds required).
+        removeHs: Whether to remove hydrogens when reading the PDB file.
+
+    Returns:
+        True if a valid SMILES string can be generated.
+    """
+    return get_smiles_if_valid(mol, removeHs=removeHs) is not None

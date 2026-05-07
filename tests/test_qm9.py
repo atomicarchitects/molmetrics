@@ -3,6 +3,7 @@
 Uses 3 QM9 molecules from the test data directory.
 QM9 ground truth molecules should have high stability and validity.
 """
+
 import os
 import pytest
 import molmetrics as mm

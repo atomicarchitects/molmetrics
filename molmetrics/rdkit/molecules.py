@@ -58,7 +58,8 @@ class RDKitMolecules:
         can be generated. Generally more lenient than xyz2mol validity.
         """
         n_valid = sum(
-            1 for mol in self
+            1
+            for mol in self
             if validity.check_molecule_validity_with_smiles(mol, removeHs=removeHs)
         )
         return n_valid / len(self)
@@ -76,14 +77,20 @@ class RDKitMolecules:
         """Computes the fraction of unique molecules among SMILES-valid molecules.
 
         Uses the SMILES-based validity protocol (ADiT/Zatom-1) to determine valid
-        molecules, then computes uniqueness among those.
+        molecules, then computes uniqueness via canonical SMILES strings.
         """
-        valid_mols = self.keep_valid_with_smiles(removeHs=removeHs)
-        valid_mols = valid_mols.add_bonds()
-        if not valid_mols:
+        from . import validity as val_mod
+
+        smiles_set = set()
+        n_valid = 0
+        for mol in self:
+            smiles = val_mod.get_smiles_if_valid(mol, removeHs=removeHs)
+            if smiles is not None:
+                n_valid += 1
+                smiles_set.add(smiles)
+        if n_valid == 0:
             return 0.0
-        unique_mols = uniqueness.get_all_unique_molecules(valid_mols)
-        return len(unique_mols) / len(valid_mols)
+        return len(smiles_set) / n_valid
 
     def atom_stability(self) -> float:
         """Computes the fraction of atoms with correct valency (EDM metric).
@@ -178,11 +185,17 @@ class RDKitMolecules:
     def keep_valid_with_smiles(self, removeHs: bool = False) -> "RDKitMolecules":
         """Filters out invalid molecules using the SMILES-based protocol."""
         return RDKitMolecules(
-            [mol for mol in self if validity.check_molecule_validity_with_smiles(mol, removeHs=removeHs)]
+            [
+                mol
+                for mol in self
+                if validity.check_molecule_validity_with_smiles(mol, removeHs=removeHs)
+            ]
         )
 
     @classmethod
-    def from_directory(cls, directory: str, extension: str = ".xyz") -> "RDKitMolecules":
+    def from_directory(
+        cls, directory: str, extension: str = ".xyz"
+    ) -> "RDKitMolecules":
         """Loads molecules from a directory."""
         molecules = io.get_all_molecules(directory, extension)
         return cls(molecules)

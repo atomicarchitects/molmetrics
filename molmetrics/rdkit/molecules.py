@@ -223,6 +223,19 @@ class RDKitMolecules:
             raise ImportError(
                 "posebusters is not installed. Install it with: pip install posebusters"
             )
-        return posebusters.PoseBusters(config).bust(
-            mol_pred=self, full_report=full_report
-        )
+        import warnings
+        import logging as _logging
+
+        pb_logger = _logging.getLogger("posebusters")
+        prev_level = pb_logger.level
+        pb_logger.setLevel(_logging.CRITICAL)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            result = posebusters.PoseBusters(config).bust(
+                mol_pred=self, full_report=full_report
+            )
+
+        pb_logger.setLevel(prev_level)
+        return result

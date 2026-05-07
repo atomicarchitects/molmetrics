@@ -96,12 +96,21 @@ def _smiles_validity_pipeline(mol: Chem.Mol, removeHs: bool = False):
     try:
         pmg_mol.to(pdb_path, fmt="pdb")
 
-        rdkit_mol = Chem.MolFromPDBFile(pdb_path, removeHs=removeHs)
+        _blocker = rdBase.BlockLogs()
+        rdkit_mol = Chem.MolFromPDBFile(pdb_path, removeHs=removeHs, sanitize=False)
         if rdkit_mol is None:
+            del _blocker
+            return None
+
+        try:
+            Chem.SanitizeMol(rdkit_mol)
+        except Exception:
+            del _blocker
             return None
 
         # Check initial SMILES
         smiles = Chem.MolToSmiles(rdkit_mol, isomericSmiles=True)
+        del _blocker
         if smiles is None or smiles == "":
             return None
 

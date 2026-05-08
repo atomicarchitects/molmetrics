@@ -212,15 +212,32 @@ class RDKitMolecules:
         molecules = io.ase_to_rdkit_molecules(atoms)
         return cls(molecules)
 
-    def evaluate(self, skip_posebusters: bool = False) -> dict:
+    @staticmethod
+    def _run_with_timeout(fn, args=(), timeout=60):
+        """Run a function with a timeout using a worker thread.
+
+        Returns the function's result, or None if it times out or raises.
+        """
+        import concurrent.futures
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(fn, *args)
+            try:
+                return future.result(timeout=timeout)
+            except (concurrent.futures.TimeoutError, Exception):
+                return None
+
+    def evaluate(self, skip_posebusters: bool = True, timeout: int = 60) -> dict:
         """Compute all standard metrics in a single pass.
 
-        Runs each expensive pipeline (xyz2mol, SMILES, stability) exactly once,
+        Runs each pipeline (xyz2mol, SMILES, stability) exactly once,
         avoiding the redundant work that happens when calling validity(),
         uniqueness(), atom_stability(), etc. individually.
 
         Args:
             skip_posebusters: If True, skip PoseBusters analysis.
+            timeout: Max seconds per molecule for xyz2mol/SMILES validity.
+                Molecules that exceed this are treated as invalid.
 
         Returns:
             Dictionary with keys:
@@ -264,9 +281,19 @@ class RDKitMolecules:
                 result[f"pb_{k}"] = None
             return result
 
+        n_timeouts = 0
+
         # xyz2mol validity + uniqueness (single pass)
         blocker = rdBase.BlockLogs()
-        valid_x2m = [mol for mol in self if validity.check_molecule_validity(mol)]
+        valid_x2m = []
+        for mol in self:
+            result_x2m = self._run_with_timeout(
+                validity.check_molecule_validity, (mol,), timeout=timeout
+            )
+            if result_x2m is None:
+                n_timeouts += 1
+            elif result_x2m:
+                valid_x2m.append(mol)
         del blocker
 
         val_x2m = len(valid_x2m) / n
@@ -283,8 +310,12 @@ class RDKitMolecules:
         n_valid_smi = 0
         valid_mols_smi = []
         for mol in self:
-            result_smi = validity.get_mol_with_bonds_if_valid(mol)
-            if result_smi is not None:
+            result_smi = self._run_with_timeout(
+                validity.get_mol_with_bonds_if_valid, (mol,), timeout=timeout
+            )
+            if result_smi is None:
+                pass  # timeout or error — treat as invalid
+            else:
                 n_valid_smi += 1
                 smiles_set.add(result_smi[0])
                 valid_mols_smi.append(result_smi[1])
@@ -311,8 +342,12 @@ class RDKitMolecules:
         atom_stab_pct = stable_atoms / total_atoms if total_atoms > 0 else 0.0
         mol_stab_pct = stable_mols / total_mols if total_mols > 0 else 0.0
 
+        if n_timeouts > 0:
+            log.warning(f"{n_timeouts} molecules timed out during evaluation.")
+
         result = {
             "n_molecules": n,
+            "n_timeouts": n_timeouts,
             "validity_xyz2mol": val_x2m,
             "validity_smiles": val_smi,
             "uniqueness_xyz2mol": uniq_x2m,

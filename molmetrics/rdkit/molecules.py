@@ -212,6 +212,131 @@ class RDKitMolecules:
         molecules = io.ase_to_rdkit_molecules(atoms)
         return cls(molecules)
 
+    def evaluate(self, skip_posebusters: bool = False) -> dict:
+        """Compute all standard metrics in a single pass.
+
+        Runs each expensive pipeline (xyz2mol, SMILES, stability) exactly once,
+        avoiding the redundant work that happens when calling validity(),
+        uniqueness(), atom_stability(), etc. individually.
+
+        Args:
+            skip_posebusters: If True, skip PoseBusters analysis.
+
+        Returns:
+            Dictionary with keys:
+                n_molecules, validity_xyz2mol, validity_smiles,
+                uniqueness_xyz2mol, uniqueness_smiles,
+                atom_stability, molecule_stability,
+                valid_mols_xyz2mol (RDKitMolecules with bonds),
+                valid_mols_smiles (RDKitMolecules with bonds).
+
+                If skip_posebusters is False,
+                then the following keys are also returned:
+                pb_all_atoms_connected, pb_bond_lengths, pb_bond_angles,
+                pb_internal_steric_clash, pb_aromatic_ring_flatness,
+                pb_double_bond_flatness, pb_internal_energy
+        """
+        n = len(self)
+
+        PB_KEYS = [
+            "all_atoms_connected",
+            "bond_lengths",
+            "bond_angles",
+            "internal_steric_clash",
+            "aromatic_ring_flatness",
+            "double_bond_flatness",
+            "internal_energy",
+        ]
+
+        if n == 0:
+            result = {
+                "n_molecules": 0,
+                "validity_xyz2mol": 0.0,
+                "validity_smiles": 0.0,
+                "uniqueness_xyz2mol": 0.0,
+                "uniqueness_smiles": 0.0,
+                "atom_stability": 0.0,
+                "molecule_stability": 0.0,
+                "valid_mols_xyz2mol": RDKitMolecules([]),
+                "valid_mols_smiles": RDKitMolecules([]),
+            }
+            for k in PB_KEYS:
+                result[f"pb_{k}"] = None
+            return result
+
+        # xyz2mol validity + uniqueness (single pass)
+        blocker = rdBase.BlockLogs()
+        valid_x2m = [mol for mol in self if validity.check_molecule_validity(mol)]
+        del blocker
+
+        val_x2m = len(valid_x2m) / n
+        valid_with_bonds = RDKitMolecules(valid_x2m).add_bonds()
+
+        if len(valid_with_bonds) > 0:
+            unique_x2m = uniqueness.get_all_unique_molecules(valid_with_bonds)
+            uniq_x2m = len(unique_x2m) / len(valid_with_bonds)
+        else:
+            uniq_x2m = 0.0
+
+        # SMILES validity + uniqueness (single pass)
+        smiles_set = set()
+        n_valid_smi = 0
+        valid_mols_smi = []
+        for mol in self:
+            result_smi = validity.get_mol_with_bonds_if_valid(mol)
+            if result_smi is not None:
+                n_valid_smi += 1
+                smiles_set.add(result_smi[0])
+                valid_mols_smi.append(result_smi[1])
+
+        val_smi = n_valid_smi / n
+        uniq_smi = len(smiles_set) / n_valid_smi if n_valid_smi > 0 else 0.0
+
+        # Stability (single pass)
+        total_atoms = 0
+        stable_atoms = 0
+        total_mols = 0
+        stable_mols = 0
+        for mol in self:
+            if mol.GetNumConformers() == 0:
+                continue
+            atom_stab, mol_stab = stability.compute_stability_for_molecule(mol)
+            na = mol.GetNumAtoms()
+            stable_atoms += int(round(atom_stab * na))
+            total_atoms += na
+            total_mols += 1
+            if mol_stab:
+                stable_mols += 1
+
+        atom_stab_pct = stable_atoms / total_atoms if total_atoms > 0 else 0.0
+        mol_stab_pct = stable_mols / total_mols if total_mols > 0 else 0.0
+
+        result = {
+            "n_molecules": n,
+            "validity_xyz2mol": val_x2m,
+            "validity_smiles": val_smi,
+            "uniqueness_xyz2mol": uniq_x2m,
+            "uniqueness_smiles": uniq_smi,
+            "atom_stability": atom_stab_pct,
+            "molecule_stability": mol_stab_pct,
+            "valid_mols_xyz2mol": valid_with_bonds,
+            "valid_mols_smiles": RDKitMolecules(valid_mols_smi),
+        }
+
+        # PoseBusters
+        if not skip_posebusters:
+            pb_means = {}
+            valid_smi_mols = RDKitMolecules(valid_mols_smi)
+            if len(valid_smi_mols) > 0:
+                pb_df = valid_smi_mols.analyse_with_posebusters()
+                pb_means = pb_df.mean().to_dict()
+
+            for k in PB_KEYS:
+                v = pb_means.get(k)
+                result[f"pb_{k}"] = v if v is not None else None
+
+        return result
+
     def analyse_with_posebusters(self, full_report: bool = False, config: str = "mol"):
         """Returns the analysis results from PoseBusters.
 

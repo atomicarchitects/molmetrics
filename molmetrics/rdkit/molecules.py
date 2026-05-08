@@ -53,7 +53,7 @@ class RDKitMolecules:
     def validity_with_smiles(self, removeHs: bool = False) -> float:
         """Computes the fraction of valid molecules using the SMILES-based protocol.
 
-        Matches the evaluation used by ADiT (Joshi et al., 2025) and Zatom-1 (Luo et al., 2025):
+        Matches the evaluation used by ADiT (Joshi et al., 2025) and Zatom-1 (Morehead et al., 2025):
         writes to PDB via pymatgen, reads back with RDKit, checks if canonical SMILES
         can be generated. Generally more lenient than xyz2mol validity.
         """

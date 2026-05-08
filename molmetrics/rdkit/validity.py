@@ -131,7 +131,7 @@ def check_molecule_validity_with_smiles(mol: Chem.Mol, removeHs: bool = False) -
 
     Writes molecule to PDB via pymatgen (which infers bonds from geometry),
     reads it back with RDKit, and checks if a canonical SMILES can be generated.
-    This matches the evaluation protocol used by Joshi et al. (2025) and Morehead et al. (2026).
+    This matches the evaluation protocol used by ADiT (Joshi et al., 2025) and Zatom-1 (Morehead et al., 2025).
 
     Args:
         mol: RDKit molecule with a 3D conformer and atom types (no bonds required).

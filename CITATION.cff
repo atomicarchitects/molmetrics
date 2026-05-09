@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Daigavane"
+  given-names: "Ameya"
+  orcid: "https://orcid.org/0000-0002-5116-3075"
+- family-names: "Kim"
+  given-names: "Song"
+  orcid: "https://orcid.org/0000-0003-1039-1204"
+title: "molmetrics"
+version: 0.2.0
+date-released: 2026-05-09
+url: "https://github.com/atomicarchitects/molmetrics"
